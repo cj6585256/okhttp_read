@@ -29,6 +29,7 @@ public abstract class NamedRunnable implements Runnable {
     String oldName = Thread.currentThread().getName();
     Thread.currentThread().setName(name);
     try {
+		//run方法调用了抽象的execute方法，execute在子类中实现
       execute();
     } finally {
       Thread.currentThread().setName(oldName);

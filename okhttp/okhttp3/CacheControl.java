@@ -10,6 +10,7 @@ import okhttp3.internal.http.HttpHeaders;
  *
  * <p>See <a href="https://tools.ietf.org/html/rfc7234#section-5.2">RFC 7234, 5.2</a>.
  */
+ //缓存控制：一些关于缓存的参数 build模式
 public final class CacheControl {
   /**
    * Cache control request directives that require network validation of responses. Note that such

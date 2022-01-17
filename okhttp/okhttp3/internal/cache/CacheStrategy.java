@@ -47,6 +47,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * header for conditional GETs) or warnings to the cached response (if the cached data is
  * potentially stale).
  */
+ //缓存策略
 public final class CacheStrategy {
   /** The request to send on the network, or null if this call doesn't use the network. */
   public final @Nullable Request networkRequest;
@@ -183,11 +184,13 @@ public final class CacheStrategy {
     /** Returns a strategy to use assuming the request can use the network. */
     private CacheStrategy getCandidate() {
       // No cached response.
+      //不缓存
       if (cacheResponse == null) {
         return new CacheStrategy(request, null);
       }
 
       // Drop the cached response if it's missing a required handshake.
+      //https &&没有握手
       if (request.isHttps() && cacheResponse.handshake() == null) {
         return new CacheStrategy(request, null);
       }
@@ -200,6 +203,7 @@ public final class CacheStrategy {
       }
 
       CacheControl requestCaching = request.cacheControl();
+	  //不缓存 || 条件缓存 都返回空策略
       if (requestCaching.noCache() || hasConditions(request)) {
         return new CacheStrategy(request, null);
       }

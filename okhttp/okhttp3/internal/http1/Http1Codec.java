@@ -65,7 +65,8 @@ import static okhttp3.internal.http.StatusLine.HTTP_CONTINUE;
  * <p>Exchanges that do not have a request body may skip creating and closing the request body.
  * Exchanges that do not have a response body can call {@link #newFixedLengthSource(long)
  * newFixedLengthSource(0)} and may skip reading and closing that source.
- */
+ */ 
+ //Http请求发起
 public final class Http1Codec implements HttpCodec {
   private static final int STATE_IDLE = 0; // Idle connections are ready to write request headers.
   private static final int STATE_OPEN_REQUEST_BODY = 1;

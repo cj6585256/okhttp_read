@@ -58,6 +58,7 @@ import static okhttp3.internal.http.StatusLine.HTTP_TEMP_REDIRECT;
  * This interceptor recovers from failures and follows redirects as necessary. It may throw an
  * {@link IOException} if the call was canceled.
  */
+ //重试&重定向拦截器
 public final class RetryAndFollowUpInterceptor implements Interceptor {
   /**
    * How many redirects and auth challenges should we attempt? Chrome follows 21 redirects; Firefox,
@@ -284,6 +285,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
     int responseCode = userResponse.code();
 
     final String method = userResponse.request().method();
+	//针对不同的Http response状态码处理
     switch (responseCode) {
       case HTTP_PROXY_AUTH:
         Proxy selectedProxy = route.proxy();
@@ -309,7 +311,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
       case HTTP_SEE_OTHER:
         // Does the client allow redirects?
         if (!client.followRedirects()) return null;
-
+		//重定向相关处理
         String location = userResponse.header("Location");
         if (location == null) return null;
         HttpUrl url = userResponse.request().url().resolve(location);

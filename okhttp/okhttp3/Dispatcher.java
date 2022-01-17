@@ -36,14 +36,16 @@ import okhttp3.internal.Util;
  * own executor, it should be able to run {@linkplain #getMaxRequests the configured maximum} number
  * of calls concurrently.
  */
+ //请求分发器
 public final class Dispatcher {
-  private int maxRequests = 64;
-  private int maxRequestsPerHost = 5;
+  private int maxRequests = 64;//最大请求数
+  private int maxRequestsPerHost = 5;//每个域名下最大请求数
   private @Nullable Runnable idleCallback;
 
   /** Executes calls. Created lazily. */
   private @Nullable ExecutorService executorService;
-
+  
+	//三个队列：异步等待队列，运行中的异步队列，运行中的同步队列
   /** Ready async calls in the order they'll be run. */
   private final Deque<AsyncCall> readyAsyncCalls = new ArrayDeque<>();
 
@@ -60,8 +62,12 @@ public final class Dispatcher {
   public Dispatcher() {
   }
 
+  //执行分发任务的线程池
   public synchronized ExecutorService executorService() {
     if (executorService == null) {
+		//核心线程=0，线程池最大限制=Integer.MAX_VALUE,工作队列SynchronousQueue<Runnable>
+		//SynchronousQueue和其他的BlockingQueue不同的是SynchronousQueue的capacity是0。即SynchronousQueue不存储任何元素。
+		//这样相当于每个请求都创建新的Thread来执行，最快速度达到高并发
       executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60, TimeUnit.SECONDS,
           new SynchronousQueue<Runnable>(), Util.threadFactory("OkHttp Dispatcher", false));
     }
@@ -131,6 +137,7 @@ public final class Dispatcher {
   }
 
   void enqueue(AsyncCall call) {
+  	//先加入异步等待队列
     synchronized (this) {
       readyAsyncCalls.add(call);
     }
@@ -168,14 +175,18 @@ public final class Dispatcher {
     List<AsyncCall> executableCalls = new ArrayList<>();
     boolean isRunning;
     synchronized (this) {
+		//轮询异步等待队列
       for (Iterator<AsyncCall> i = readyAsyncCalls.iterator(); i.hasNext(); ) {
         AsyncCall asyncCall = i.next();
-
+		//达到了最大请求数限制，跳出循环
         if (runningAsyncCalls.size() >= maxRequests) break; // Max capacity.
+        //达到了每个域名配置的最大请求数后终止此次循环，接着轮询下一个
         if (runningCallsForHost(asyncCall) >= maxRequestsPerHost) continue; // Host max capacity.
 
         i.remove();
+		//executableCalls？真正遍历执行
         executableCalls.add(asyncCall);
+		//加入异步正在执行队列
         runningAsyncCalls.add(asyncCall);
       }
       isRunning = runningCallsCount() > 0;
@@ -183,6 +194,7 @@ public final class Dispatcher {
 
     for (int i = 0, size = executableCalls.size(); i < size; i++) {
       AsyncCall asyncCall = executableCalls.get(i);
+	  //调用AsyncCall executeOn执行在定义的线程池中
       asyncCall.executeOn(executorService());
     }
 
@@ -206,11 +218,13 @@ public final class Dispatcher {
 
   /** Used by {@code AsyncCall#run} to signal completion. */
   void finished(AsyncCall call) {
+  //异步Call回调后移除
     finished(runningAsyncCalls, call);
   }
 
   /** Used by {@code Call#execute} to signal completion. */
   void finished(RealCall call) {
+  //同步Call回调后移除
     finished(runningSyncCalls, call);
   }
 

@@ -74,6 +74,7 @@ import static java.net.HttpURLConnection.HTTP_PROXY_AUTH;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static okhttp3.internal.Util.closeQuietly;
 
+//socket实现http连接
 public final class RealConnection extends Http2Connection.Listener implements Connection {
   private static final String NPE_THROW_WITH_NULL = "throw with null exception";
   private static final int MAX_TUNNEL_ATTEMPTS = 21;
@@ -164,6 +165,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
             break;
           }
         } else {
+        //连接socket
           connectSocket(connectTimeout, readTimeout, call, eventListener);
         }
         establishProtocol(connectionSpecSelector, pingIntervalMillis, call, eventListener);
@@ -232,6 +234,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   }
 
   /** Does all the work necessary to build a full HTTP or HTTPS connection on a raw socket. */
+	  //原始Socket构建完整HTTP或HTTPS连接。
   private void connectSocket(int connectTimeout, int readTimeout, Call call,
       EventListener eventListener) throws IOException {
     Proxy proxy = route.proxy();
@@ -244,6 +247,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     eventListener.connectStart(call, route.socketAddress(), proxy);
     rawSocket.setSoTimeout(readTimeout);
     try {
+		//Platform = AndroidPlatform -->AndroidPlatform.connectSocket()
       Platform.get().connectSocket(rawSocket, route.socketAddress(), connectTimeout);
     } catch (ConnectException e) {
       ConnectException ce = new ConnectException("Failed to connect to " + route.socketAddress());
@@ -256,8 +260,9 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     // https://github.com/square/okhttp/issues/3245
     // https://android-review.googlesource.com/#/c/271775/
     try {
-      source = Okio.buffer(Okio.source(rawSocket));
-      sink = Okio.buffer(Okio.sink(rawSocket));
+		//socket通过Okio来读写数据
+      source = Okio.buffer(Okio.source(rawSocket));//读数据,类似InputStream
+      sink = Okio.buffer(Okio.sink(rawSocket));//写数据进socket，类似OutputStream
     } catch (NullPointerException npe) {
       if (NPE_THROW_WITH_NULL.equals(npe.getMessage())) {
         throw new IOException(npe);
@@ -265,6 +270,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     }
   }
 
+//建立协议 http1.1/http2协议
   private void establishProtocol(ConnectionSpecSelector connectionSpecSelector,
       int pingIntervalMillis, Call call, EventListener eventListener) throws IOException {
     if (route.address().sslSocketFactory() == null) {
@@ -281,6 +287,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     }
 
     eventListener.secureConnectStart(call);
+	//https需要的tls
     connectTls(connectionSpecSelector);
     eventListener.secureConnectEnd(call, handshake);
 
@@ -299,6 +306,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     http2Connection.start();
   }
 
+	//HTTPS支持
   private void connectTls(ConnectionSpecSelector connectionSpecSelector) throws IOException {
     Address address = route.address();
     SSLSocketFactory sslSocketFactory = address.sslSocketFactory();

@@ -38,6 +38,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static okhttp3.internal.Util.closeQuietly;
 import static okhttp3.internal.platform.Platform.INFO;
 
+//真正请求的Call:同步RealCall 异步AsyncCall
 final class RealCall implements Call {
   final OkHttpClient client;
   final RetryAndFollowUpInterceptor retryAndFollowUpInterceptor;
@@ -178,10 +179,12 @@ final class RealCall implements Call {
      * Attempt to enqueue this async call on {@code executorService}. This will attempt to clean up
      * if the executor has been shut down by reporting the call as failed.
      */
+     //异步执行的具体
     void executeOn(ExecutorService executorService) {
       assert (!Thread.holdsLock(client.dispatcher()));
       boolean success = false;
       try {
+	  	//调到AsyncCall中的run方法中，而AsyncCall的run方法在父类中调用execute方法，run方法相当于做了个转交
         executorService.execute(this);
         success = true;
       } catch (RejectedExecutionException e) {
@@ -191,15 +194,18 @@ final class RealCall implements Call {
         responseCallback.onFailure(RealCall.this, ioException);
       } finally {
         if (!success) {
+			//回调分发器的finished方法，来把Call从队列移除
           client.dispatcher().finished(this); // This call is no longer running!
         }
       }
     }
 
+	//AsyncCall执行
     @Override protected void execute() {
       boolean signalledCallback = false;
       timeout.enter();
       try {
+	  	//责任链
         Response response = getResponseWithInterceptorChain();
         signalledCallback = true;
         responseCallback.onResponse(RealCall.this, response);
@@ -242,16 +248,19 @@ final class RealCall implements Call {
   Response getResponseWithInterceptorChain() throws IOException {
     // Build a full stack of interceptors.
     List<Interceptor> interceptors = new ArrayList<>();
+	//先添加用户端构建HttpClient设置的
     interceptors.addAll(client.interceptors());
     interceptors.add(retryAndFollowUpInterceptor);
     interceptors.add(new BridgeInterceptor(client.cookieJar()));
     interceptors.add(new CacheInterceptor(client.internalCache()));
     interceptors.add(new ConnectInterceptor(client));
     if (!forWebSocket) {
+		//不是webSocket才添加用户配置网络拦截器
       interceptors.addAll(client.networkInterceptors());
     }
     interceptors.add(new CallServerInterceptor(forWebSocket));
 
+	//责任链
     Interceptor.Chain chain = new RealInterceptorChain(interceptors, null, null, null, 0,
         originalRequest, this, eventListener, client.connectTimeoutMillis(),
         client.readTimeoutMillis(), client.writeTimeoutMillis());

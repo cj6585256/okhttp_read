@@ -60,13 +60,14 @@ class AndroidPlatform extends Platform {
   AndroidPlatform(Class<?> sslParametersClass, OptionalMethod<Socket> setUseSessionTickets,
       OptionalMethod<Socket> setHostname, OptionalMethod<Socket> getAlpnSelectedProtocol,
       OptionalMethod<Socket> setAlpnProtocols) {
-    this.sslParametersClass = sslParametersClass;
+    this.sslParametersClass = sslParametersClass; //https的ssl参数
     this.setUseSessionTickets = setUseSessionTickets;
     this.setHostname = setHostname;
     this.getAlpnSelectedProtocol = getAlpnSelectedProtocol;
     this.setAlpnProtocols = setAlpnProtocols;
   }
 
+//socket连接:Socket内部实现三次握手
   @Override public void connectSocket(Socket socket, InetSocketAddress address,
       int connectTimeout) throws IOException {
     try {

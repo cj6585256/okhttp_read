@@ -30,6 +30,7 @@ import okio.Okio;
 import okio.Sink;
 
 /** This is the last interceptor in the chain. It makes a network call to the server. */
+//最后一个拦截器，真正执行网络请求的
 public final class CallServerInterceptor implements Interceptor {
   private final boolean forWebSocket;
 
@@ -47,6 +48,7 @@ public final class CallServerInterceptor implements Interceptor {
     long sentRequestMillis = System.currentTimeMillis();
 
     realChain.eventListener().requestHeadersStart(realChain.call());
+	//消息头
     httpCodec.writeRequestHeaders(request);
     realChain.eventListener().requestHeadersEnd(realChain.call(), request);
 
@@ -67,6 +69,7 @@ public final class CallServerInterceptor implements Interceptor {
         long contentLength = request.body().contentLength();
         CountingSink requestBodyOut =
             new CountingSink(httpCodec.createRequestBody(request, contentLength));
+		//使用Okio把body写入到缓冲输出流中
         BufferedSink bufferedRequestBody = Okio.buffer(requestBodyOut);
 
         request.body().writeTo(bufferedRequestBody);
@@ -85,6 +88,7 @@ public final class CallServerInterceptor implements Interceptor {
 
     if (responseBuilder == null) {
       realChain.eventListener().responseHeadersStart(realChain.call());
+	  //读取响应头
       responseBuilder = httpCodec.readResponseHeaders(false);
     }
 
@@ -120,6 +124,7 @@ public final class CallServerInterceptor implements Interceptor {
           .body(Util.EMPTY_RESPONSE)
           .build();
     } else {
+		//读消息体
       response = response.newBuilder()
           .body(httpCodec.openResponseBody(response))
           .build();

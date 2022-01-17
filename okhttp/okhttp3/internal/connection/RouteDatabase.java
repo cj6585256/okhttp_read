@@ -26,6 +26,7 @@ import okhttp3.Route;
  * preferred.
  */
 public final class RouteDatabase {
+	//失败路由Set集：存储路由，Key唯一，拒绝再次添加。
   private final Set<Route> failedRoutes = new LinkedHashSet<>();
 
   /** Records a failure connecting to {@code failedRoute}. */
